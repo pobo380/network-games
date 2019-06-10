@@ -1,0 +1,117 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: websocket # NOTE: update this with your service name
+#app: your-app-name
+#tenant: your-tenant-name
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+frameworkVersion: ">=1.28.0 <2.0.0"
+
+provider:
+  name: aws
+  runtime: go1.x
+
+# you can overwrite defaults here
+  stage: dev
+  region: ap-northeast-1
+
+# you can add statements to the Lambda function's IAM Role here
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "execute-api:ManageConnections"
+      Resource:
+        - "arn:aws:execute-api:*:*:**/@connections/*"
+    - Effect: Allow
+      Action:
+        - "dynamodb:PutItem"
+        - "dynamodb:GetItem"
+        - "dynamodb:UpdateItem"
+        - "dynamodb:DeleteItem"
+        - "dynamodb:BatchGetItem"
+        - "dynamodb:BatchWriteItem"
+        - "dynamodb:Query"
+        - "dynamodb:Scan"
+      Resource:
+        - Fn::GetAtt: [ ChatConnectionsTable, Arn ]
+        - Fn::GetAtt: [ GameStatesTable, Arn ]
+
+# you can define service wide environment variables here
+  environment:
+    DYNAMODB_TABLE_CONNECTIONS:
+      Ref: ChatConnectionsTable
+    DYNAMODB_TABLE_GAME_STATES:
+      Ref: GameStatesTable
+
+package:
+ exclude:
+   - ./**
+ include:
+   - ./bin/**
+
+functions:
+  onConnect:
+    handler: bin/on_connect
+    events:
+      - websocket:
+          route: $connect
+  onDisconnect:
+    handler: bin/on_disconnect
+    events:
+      - websocket:
+          route: $disconnect
+  sendMessage:
+    handler: bin/send_message
+    events:
+      - websocket:
+          route: sendMessage
+
+resources:
+  Resources:
+    ChatConnectionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service.name}-connections-${self:provider.stage}
+        AttributeDefinitions:
+          - AttributeName: ConnectionId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: ConnectionId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        SSESpecification:
+          SSEEnabled: True
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+    GameStatesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service.name}-game-states-${self:provider.stage}
+        AttributeDefinitions:
+          - AttributeName: GameId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: GameId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        SSESpecification:
+          SSEEnabled: False
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
