@@ -1,6 +1,6 @@
 .PHONY: build clean deploy deploy-function
 
-build: bin/on_connect bin/on_disconnect bin/send_message
+build: bin/on_connect bin/on_disconnect bin/send_message bin/join_room
 
 bin/%: handler/%.go
 	env GOOS=linux go build -ldflags="-s -w" -o $@ $^ handler/const.go handler/vars.go

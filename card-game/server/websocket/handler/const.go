@@ -6,7 +6,10 @@ const (
 	EnvDynamoDbTableGameStates  = "DYNAMODB_TABLE_GAME_STATES"
 
 	DynamoDbIndexConnectionId = "ConnectionId"
+	DynamoDbIndexIsOpen       = "IsOpen"
 
 	CustomHttpHeaderPrefix = "x-pobo380-network-games"
 	CustomHeaderPlayerId   = CustomHttpHeaderPrefix + "-player-id"
+
+	MaxPlayerNumPerRoom = 4
 )

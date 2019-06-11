@@ -14,6 +14,7 @@ var (
 	dynamo = NewDynamo()
 
 	DynamoDbTableConnections = os.Getenv(EnvDynamoDbTableConnections)
+	DynamoDbTableRooms       = os.Getenv(EnvDynamoDbTableRooms)
 	DynamoDbTableGameStates  = os.Getenv(EnvDynamoDbTableGameStates)
 )
 

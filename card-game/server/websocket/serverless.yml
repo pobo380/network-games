@@ -49,6 +49,7 @@ provider:
         - Fn::GetAtt: [ PlayerConnectionsTable, Arn ]
         - Fn::Join: [ "/", [ Fn::GetAtt: [ PlayerConnectionsTable, Arn ], "index", "*" ] ]
         - Fn::GetAtt: [ RoomsTable, Arn ]
+        - Fn::Join: [ "/", [ Fn::GetAtt: [ RoomsTable, Arn ], "index", "*" ] ]
         - Fn::GetAtt: [ GameStatesTable, Arn ]
 
 # you can define service wide environment variables here
@@ -77,6 +78,11 @@ functions:
     events:
       - websocket:
           route: $disconnect
+  joinRoom:
+    handler: bin/join_room
+    events:
+      - websocket:
+          route: joinRoom
   sendMessage:
     handler: bin/send_message
     events:
@@ -121,9 +127,21 @@ resources:
         AttributeDefinitions:
           - AttributeName: RoomId
             AttributeType: S
+          - AttributeName: IsOpen
+            AttributeType: S
         KeySchema:
           - AttributeName: RoomId
             KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: IsOpen
+            KeySchema:
+              - AttributeName: IsOpen
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
