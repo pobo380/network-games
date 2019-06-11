@@ -46,13 +46,17 @@ provider:
         - "dynamodb:Query"
         - "dynamodb:Scan"
       Resource:
-        - Fn::GetAtt: [ ChatConnectionsTable, Arn ]
+        - Fn::GetAtt: [ PlayerConnectionsTable, Arn ]
+        - Fn::Join: [ "/", [ Fn::GetAtt: [ PlayerConnectionsTable, Arn ], "index", "*" ] ]
+        - Fn::GetAtt: [ RoomsTable, Arn ]
         - Fn::GetAtt: [ GameStatesTable, Arn ]
 
 # you can define service wide environment variables here
   environment:
     DYNAMODB_TABLE_CONNECTIONS:
-      Ref: ChatConnectionsTable
+      Ref: PlayerConnectionsTable
+    DYNAMODB_TABLE_ROOMS:
+      Ref: RoomsTable
     DYNAMODB_TABLE_GAME_STATES:
       Ref: GameStatesTable
 
@@ -81,21 +85,50 @@ functions:
 
 resources:
   Resources:
-    ChatConnectionsTable:
+    PlayerConnectionsTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${self:service.name}-connections-${self:provider.stage}
+        TableName: ${self:service.name}-player-connections-${self:provider.stage}
         AttributeDefinitions:
+          - AttributeName: PlayerId
+            AttributeType: S
           - AttributeName: ConnectionId
             AttributeType: S
         KeySchema:
-          - AttributeName: ConnectionId
+          - AttributeName: PlayerId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: ConnectionId
+            KeySchema: 
+              - AttributeName: ConnectionId
+                KeyType: HASH
+            Projection:
+              ProjectionType: KEYS_ONLY
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        SSESpecification:
+          SSEEnabled: False
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+    RoomsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service.name}-rooms-${self:provider.stage}
+        AttributeDefinitions:
+          - AttributeName: RoomId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: RoomId
             KeyType: HASH
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
         SSESpecification:
-          SSEEnabled: True
+          SSEEnabled: False
         StreamSpecification:
           StreamViewType: NEW_AND_OLD_IMAGES
     GameStatesTable:
