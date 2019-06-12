@@ -50,7 +50,8 @@ func JoinRoom(ctx context.Context, request events.APIGatewayWebsocketProxyReques
 		return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
 	}
 
-	var res *table.Room
+	// create apigw api manager
+	gw, err := NewGwApi(reqCtx.DomainName, reqCtx.Stage)
 
 	// create or join room
 	if *qr.Count == 0 {
@@ -68,7 +69,8 @@ func JoinRoom(ctx context.Context, request events.APIGatewayWebsocketProxyReques
 			return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
 		}
 
-		res = r
+		// send RoomInfo
+		sendRoomInfoToPlayers(gw, &response.RoomInfo{Room: r})
 	} else {
 		// join Room
 		r := &table.Room{}
@@ -85,14 +87,9 @@ func JoinRoom(ctx context.Context, request events.APIGatewayWebsocketProxyReques
 			return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
 		}
 
-		res = r
+		// send RoomInfo
+		sendRoomInfoToPlayers(gw, &response.RoomInfo{Room: r})
 	}
-
-	// create apigw api manager
-	gw, err := NewGwApi(reqCtx.DomainName, reqCtx.Stage)
-
-	// send RoomInfo
-	sendRoomInfoToPlayers(gw, &response.RoomInfo{Room: res})
 
 	return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 200}, nil
 }
@@ -114,9 +111,9 @@ func putItemRoom(r *table.Room) error {
 	return nil
 }
 
-func sendRoomInfoToPlayers(gw *gwApi.ApiGatewayManagementApi, info *response.RoomInfo) error {
-	avs := make([]map[string]*dynamodb.AttributeValue, 0, len(info.Room.PlayerIds))
-	for _, playerId := range info.Room.PlayerIds {
+func batchGetPlayerConnections(playerIds []string) ([]*table.PlayerConnection, error) {
+	avs := make([]map[string]*dynamodb.AttributeValue, 0, len(playerIds))
+	for _, playerId := range playerIds {
 		avs = append(avs, map[string]*dynamodb.AttributeValue{
 			"PlayerId": {
 				S: aws.String(playerId),
@@ -134,9 +131,24 @@ func sendRoomInfoToPlayers(gw *gwApi.ApiGatewayManagementApi, info *response.Roo
 
 	items, err := dynamo.BatchGetItem(bgi)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
+	responses := items.Responses[DynamoDbTableConnections]
+	pcs := make([]*table.PlayerConnection, 0, len(responses))
+	for _, item := range responses {
+		pc := &table.PlayerConnection{}
+		err := dynamodbattribute.UnmarshalMap(item, pc)
+		if err != nil {
+			return nil, err
+		}
+		pcs = append(pcs, pc)
+	}
+
+	return pcs, nil
+}
+
+func sendRoomInfoToPlayers(gw *gwApi.ApiGatewayManagementApi, info *response.RoomInfo) error {
 	res := &response.Response{
 		Type: response.TypeRoomInfo,
 		Body: info,
@@ -147,13 +159,12 @@ func sendRoomInfoToPlayers(gw *gwApi.ApiGatewayManagementApi, info *response.Roo
 		return err
 	}
 
-	for _, item := range items.Responses[DynamoDbTableConnections] {
-		pc := &table.PlayerConnection{}
-		err := dynamodbattribute.UnmarshalMap(item, pc)
-		if err != nil {
-			return err
-		}
+	pcs, err := batchGetPlayerConnections(info.Room.PlayerIds)
+	if err != nil {
+		return nil
+	}
 
+	for _, pc := range pcs {
 		data := &gwApi.PostToConnectionInput{
 			ConnectionId: aws.String(pc.ConnectionId),
 			Data:         raw,
