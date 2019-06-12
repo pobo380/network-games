@@ -64,7 +64,7 @@ func JoinRoom(ctx context.Context, request events.APIGatewayWebsocketProxyReques
 			MaxPlayerNum: MaxPlayerNumPerRoom,
 		}
 
-		err = putItemRoom(r)
+		err = putItem(DynamoDbTableRooms, r)
 		if err != nil {
 			return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
 		}
@@ -82,7 +82,7 @@ func JoinRoom(ctx context.Context, request events.APIGatewayWebsocketProxyReques
 		// add player and close when room is filled
 		r.AddPlayer(payload.PlayerId)
 
-		err = putItemRoom(r)
+		err = putItem(DynamoDbTableRooms, r)
 		if err != nil {
 			return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
 		}
@@ -94,15 +94,15 @@ func JoinRoom(ctx context.Context, request events.APIGatewayWebsocketProxyReques
 	return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 200}, nil
 }
 
-func putItemRoom(r *table.Room) error {
-	item, err := dynamodbattribute.MarshalMap(r)
+func putItem(table string, item interface{}) error {
+	av, err := dynamodbattribute.MarshalMap(item)
 	if err != nil {
 		return err
 	}
 
 	_, err = dynamo.PutItem(&dynamodb.PutItemInput{
-		TableName: aws.String(DynamoDbTableRooms),
-		Item:      item,
+		TableName: aws.String(table),
+		Item:      av,
 	})
 	if err != nil {
 		return err
