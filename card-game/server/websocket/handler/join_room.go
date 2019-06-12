@@ -149,19 +149,25 @@ func batchGetPlayerConnections(playerIds []string) ([]*table.PlayerConnection, e
 }
 
 func sendRoomInfoToPlayers(gw *gwApi.ApiGatewayManagementApi, info *response.RoomInfo) error {
+	pcs, err := batchGetPlayerConnections(info.Room.PlayerIds)
+	if err != nil {
+		return nil
+	}
+
+	sendToPlayers(gw, pcs, response.TypeRoomInfo, info)
+
+	return nil
+}
+
+func sendToPlayers(gw *gwApi.ApiGatewayManagementApi, pcs []*table.PlayerConnection, t response.Type, body interface{}) error {
 	res := &response.Response{
-		Type: response.TypeRoomInfo,
-		Body: info,
+		Type: t,
+		Body: body,
 	}
 
 	raw, err := json.Marshal(res)
 	if err != nil {
 		return err
-	}
-
-	pcs, err := batchGetPlayerConnections(info.Room.PlayerIds)
-	if err != nil {
-		return nil
 	}
 
 	for _, pc := range pcs {
