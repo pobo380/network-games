@@ -50,7 +50,7 @@ provider:
         - Fn::Join: [ "/", [ Fn::GetAtt: [ PlayerConnectionsTable, Arn ], "index", "*" ] ]
         - Fn::GetAtt: [ RoomsTable, Arn ]
         - Fn::Join: [ "/", [ Fn::GetAtt: [ RoomsTable, Arn ], "index", "*" ] ]
-        - Fn::GetAtt: [ GameStatesTable, Arn ]
+        - Fn::GetAtt: [ GamesTable, Arn ]
 
 # you can define service wide environment variables here
   environment:
@@ -58,8 +58,8 @@ provider:
       Ref: PlayerConnectionsTable
     DYNAMODB_TABLE_ROOMS:
       Ref: RoomsTable
-    DYNAMODB_TABLE_GAME_STATES:
-      Ref: GameStatesTable
+    DYNAMODB_TABLE_GAMES:
+      Ref: GamesTable
 
 package:
  exclude:
@@ -144,10 +144,10 @@ resources:
           SSEEnabled: False
         StreamSpecification:
           StreamViewType: NEW_AND_OLD_IMAGES
-    GameStatesTable:
+    GamesTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${self:service.name}-game-states-${self:provider.stage}
+        TableName: ${self:service.name}-games-${self:provider.stage}
         AttributeDefinitions:
           - AttributeName: GameId
             AttributeType: S

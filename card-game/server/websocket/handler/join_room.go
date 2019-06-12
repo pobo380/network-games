@@ -11,6 +11,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
+	"github.com/pobo380/network-games/card-game/server/websocket/game/model"
+	"github.com/pobo380/network-games/card-game/server/websocket/game/state"
 	"github.com/pobo380/network-games/card-game/server/websocket/handler/response"
 	"github.com/pobo380/network-games/card-game/server/websocket/table"
 )
@@ -21,6 +23,7 @@ type JoinRoomRequest struct {
 
 func JoinRoom(ctx context.Context, request events.APIGatewayWebsocketProxyRequest) (events.APIGatewayProxyResponse, error) {
 	reqCtx := request.RequestContext
+	res := response.Responses{}
 
 	// parse request
 	payload := &JoinRoomRequest{}
@@ -50,30 +53,19 @@ func JoinRoom(ctx context.Context, request events.APIGatewayWebsocketProxyReques
 		return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
 	}
 
-	// create apigw api manager
-	gw, err := NewGwApi(reqCtx.DomainName, reqCtx.Stage)
-
 	// create or join room
+	r := &table.Room{}
 	if *qr.Count == 0 {
 		// create Room
 		rid := protocol.GetIdempotencyToken()
-		r := &table.Room{
+		r = &table.Room{
 			RoomId:       rid,
 			IsOpen:       "true",
 			PlayerIds:    []string{payload.PlayerId},
 			MaxPlayerNum: MaxPlayerNumPerRoom,
 		}
-
-		err = putItem(DynamoDbTableRooms, r)
-		if err != nil {
-			return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
-		}
-
-		// send RoomInfo
-		sendRoomInfoToPlayers(gw, &response.RoomInfo{Room: r})
 	} else {
 		// join Room
-		r := &table.Room{}
 		err = dynamodbattribute.UnmarshalMap(qr.Items[0], r)
 		if err != nil {
 			return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
@@ -81,17 +73,74 @@ func JoinRoom(ctx context.Context, request events.APIGatewayWebsocketProxyReques
 
 		// add player and close when room is filled
 		r.AddPlayer(payload.PlayerId)
+	}
 
-		err = putItem(DynamoDbTableRooms, r)
+	err = putItem(DynamoDbTableRooms, r)
+	if err != nil {
+		return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
+	}
+
+	// add RoomInfo response
+	res.Add(response.TypeRoomInfo, &response.RoomInfo{Room: r})
+
+	// send GameStart when room is filled
+	if r.IsClosed() {
+		st := newState(r.PlayerIds)
+		raw, err := json.Marshal(st)
 		if err != nil {
 			return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
 		}
 
-		// send RoomInfo
-		sendRoomInfoToPlayers(gw, &response.RoomInfo{Room: r})
+		// create Game
+		g := &table.Game{
+			GameId:    protocol.GetIdempotencyToken(),
+			RawState:  string(raw),
+			PlayerIds: r.PlayerIds,
+		}
+
+		err = putItem(DynamoDbTableGames, g)
+		if err != nil {
+			return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
+		}
+
+		// send GameStart
+		res.Add(response.TypeGameStart, &response.GameStart{
+			GameId:    g.GameId,
+			PlayerIds: g.PlayerIds,
+		})
+	}
+
+	// create apigw api manager
+	gw, err := NewGwApi(reqCtx.DomainName, reqCtx.Stage)
+
+	// send Responses
+	pcs, err := batchGetPlayerConnections(r.PlayerIds)
+	if err != nil {
+		return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
+	}
+
+	err = sendResponsesToPlayers(gw, pcs, res)
+	if err != nil {
+		return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
 	}
 
 	return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 200}, nil
+}
+
+func newState(playerIds []string) *state.State {
+	cfg := model.Config{
+		InitialHandNum: 5,
+	}
+
+	players := make([]model.Player, 0, len(playerIds))
+	for _, pid := range playerIds {
+		players = append(players, model.Player{
+			Id:   model.PlayerId(pid),
+			Hand: model.Hand{},
+		})
+	}
+
+	return state.NewState(cfg, players)
 }
 
 func putItem(table string, item interface{}) error {
@@ -148,37 +197,23 @@ func batchGetPlayerConnections(playerIds []string) ([]*table.PlayerConnection, e
 	return pcs, nil
 }
 
-func sendRoomInfoToPlayers(gw *gwApi.ApiGatewayManagementApi, info *response.RoomInfo) error {
-	pcs, err := batchGetPlayerConnections(info.Room.PlayerIds)
-	if err != nil {
-		return nil
-	}
-
-	sendToPlayers(gw, pcs, response.TypeRoomInfo, info)
-
-	return nil
-}
-
-func sendToPlayers(gw *gwApi.ApiGatewayManagementApi, pcs []*table.PlayerConnection, t response.Type, body interface{}) error {
-	res := &response.Response{
-		Type: t,
-		Body: body,
-	}
-
-	raw, err := json.Marshal(res)
-	if err != nil {
-		return err
-	}
-
-	for _, pc := range pcs {
-		data := &gwApi.PostToConnectionInput{
-			ConnectionId: aws.String(pc.ConnectionId),
-			Data:         raw,
-		}
-
-		_, err = gw.PostToConnection(data)
+func sendResponsesToPlayers(gw *gwApi.ApiGatewayManagementApi, pcs []*table.PlayerConnection, res response.Responses) error {
+	for _, r := range res {
+		raw, err := json.Marshal(r)
 		if err != nil {
 			return err
+		}
+
+		for _, pc := range pcs {
+			data := &gwApi.PostToConnectionInput{
+				ConnectionId: aws.String(pc.ConnectionId),
+				Data:         raw,
+			}
+
+			_, err = gw.PostToConnection(data)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

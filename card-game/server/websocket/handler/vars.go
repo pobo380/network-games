@@ -15,7 +15,7 @@ var (
 
 	DynamoDbTableConnections = os.Getenv(EnvDynamoDbTableConnections)
 	DynamoDbTableRooms       = os.Getenv(EnvDynamoDbTableRooms)
-	DynamoDbTableGameStates  = os.Getenv(EnvDynamoDbTableGameStates)
+	DynamoDbTableGames       = os.Getenv(EnvDynamoDbTableGameStates)
 )
 
 func NewDynamo() *dynamodb.DynamoDB {

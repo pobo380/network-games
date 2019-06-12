@@ -3,7 +3,7 @@ package main
 const (
 	EnvDynamoDbTableConnections = "DYNAMODB_TABLE_CONNECTIONS"
 	EnvDynamoDbTableRooms       = "DYNAMODB_TABLE_ROOMS"
-	EnvDynamoDbTableGameStates  = "DYNAMODB_TABLE_GAME_STATES"
+	EnvDynamoDbTableGameStates  = "DYNAMODB_TABLE_GAMES"
 
 	DynamoDbIndexConnectionId = "ConnectionId"
 	DynamoDbIndexIsOpen       = "IsOpen"
