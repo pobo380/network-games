@@ -5,6 +5,7 @@ type Type string
 const (
 	TypeRoomInfo  Type = "RoomInfo"
 	TypeGameStart Type = "GameStart"
+	TypeGameEvent Type = "GameEvent"
 )
 
 type Response struct {

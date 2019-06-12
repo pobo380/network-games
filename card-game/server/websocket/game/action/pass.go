@@ -14,7 +14,7 @@ func (p *Pass) Do(st *state.State) (events event.Events, retState *state.State) 
 	retState = st
 	errFn := func(reason string) (event.Events, *state.State) {
 		events.Add(&event.NotAcceptable{
-			ActionType: TypePass,
+			ActionType: string(TypePass),
 			Reason:     reason,
 		})
 		return events, retState

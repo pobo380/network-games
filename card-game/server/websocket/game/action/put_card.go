@@ -15,7 +15,7 @@ func (pc *PutCard) Do(st *state.State) (events event.Events, retState *state.Sta
 	retState = st
 	errFn := func(reason string) (event.Events, *state.State) {
 		events.Add(&event.NotAcceptable{
-			ActionType: TypePutCard,
+			ActionType: string(TypePutCard),
 			Reason:     reason,
 		})
 		return events, retState

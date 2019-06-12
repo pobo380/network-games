@@ -83,6 +83,11 @@ functions:
     events:
       - websocket:
           route: joinRoom
+  gameAction:
+    handler: bin/game_action
+    events:
+      - websocket:
+          route: gameAction
 
 resources:
   Resources:
