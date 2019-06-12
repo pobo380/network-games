@@ -1,4 +1,4 @@
-package connection
+package table
 
 type PlayerConnection struct {
 	PlayerId     string

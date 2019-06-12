@@ -1,4 +1,4 @@
-package room
+package table
 
 type Room struct {
 	RoomId string

@@ -11,9 +11,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
-	"github.com/pobo380/network-games/card-game/server/websocket/connection"
 	"github.com/pobo380/network-games/card-game/server/websocket/handler/response"
-	"github.com/pobo380/network-games/card-game/server/websocket/room"
+	"github.com/pobo380/network-games/card-game/server/websocket/table"
 )
 
 type JoinRoomRequest struct {
@@ -51,13 +50,13 @@ func JoinRoom(ctx context.Context, request events.APIGatewayWebsocketProxyReques
 		return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
 	}
 
-	var res *room.Room
+	var res *table.Room
 
 	// create or join room
 	if *qr.Count == 0 {
 		// create Room
 		rid := protocol.GetIdempotencyToken()
-		r := &room.Room{
+		r := &table.Room{
 			RoomId:       rid,
 			IsOpen:       "true",
 			PlayerIds:    []string{payload.PlayerId},
@@ -72,7 +71,7 @@ func JoinRoom(ctx context.Context, request events.APIGatewayWebsocketProxyReques
 		res = r
 	} else {
 		// join Room
-		r := &room.Room{}
+		r := &table.Room{}
 		err = dynamodbattribute.UnmarshalMap(qr.Items[0], r)
 		if err != nil {
 			return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
@@ -98,7 +97,7 @@ func JoinRoom(ctx context.Context, request events.APIGatewayWebsocketProxyReques
 	return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 200}, nil
 }
 
-func putItemRoom(r *room.Room) error {
+func putItemRoom(r *table.Room) error {
 	item, err := dynamodbattribute.MarshalMap(r)
 	if err != nil {
 		return err
@@ -149,7 +148,7 @@ func sendRoomInfoToPlayers(gw *gwApi.ApiGatewayManagementApi, info *response.Roo
 	}
 
 	for _, item := range items.Responses[DynamoDbTableConnections] {
-		pc := &connection.PlayerConnection{}
+		pc := &table.PlayerConnection{}
 		err := dynamodbattribute.UnmarshalMap(item, pc)
 		if err != nil {
 			return err

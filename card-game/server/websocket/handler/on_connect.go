@@ -6,14 +6,14 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/pobo380/network-games/card-game/server/websocket/connection"
+	"github.com/pobo380/network-games/card-game/server/websocket/table"
 )
 
 func OnConnect(ctx context.Context, request events.APIGatewayWebsocketProxyRequest) (events.APIGatewayProxyResponse, error) {
 	reqCtx := request.RequestContext
 	playerId := request.Headers[CustomHeaderPlayerId]
 
-	pc := &connection.PlayerConnection{
+	pc := &table.PlayerConnection{
 		PlayerId:     playerId,
 		ConnectionId: reqCtx.ConnectionID,
 	}

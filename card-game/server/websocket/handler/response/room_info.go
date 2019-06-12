@@ -1,7 +1,7 @@
 package response
 
-import "github.com/pobo380/network-games/card-game/server/websocket/room"
+import "github.com/pobo380/network-games/card-game/server/websocket/table"
 
 type RoomInfo struct {
-	Room *room.Room
+	Room *table.Room
 }
