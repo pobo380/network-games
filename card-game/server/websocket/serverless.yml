@@ -83,11 +83,6 @@ functions:
     events:
       - websocket:
           route: joinRoom
-  sendMessage:
-    handler: bin/send_message
-    events:
-      - websocket:
-          route: sendMessage
 
 resources:
   Resources:
