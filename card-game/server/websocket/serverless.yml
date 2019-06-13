@@ -45,12 +45,18 @@ provider:
         - "dynamodb:BatchWriteItem"
         - "dynamodb:Query"
         - "dynamodb:Scan"
+        - "dynamodb:DescribeTable"
       Resource:
         - Fn::GetAtt: [ PlayerConnectionsTable, Arn ]
         - Fn::Join: [ "/", [ Fn::GetAtt: [ PlayerConnectionsTable, Arn ], "index", "*" ] ]
         - Fn::GetAtt: [ RoomsTable, Arn ]
         - Fn::Join: [ "/", [ Fn::GetAtt: [ RoomsTable, Arn ], "index", "*" ] ]
         - Fn::GetAtt: [ GamesTable, Arn ]
+    - Effect: Allow
+      Action:
+        - "dynamodb:ListTables"
+      Resource:
+        - "*"
 
 # you can define service wide environment variables here
   environment:
@@ -88,6 +94,12 @@ functions:
     events:
       - websocket:
           route: gameAction
+  debug:
+    handler: bin/debug
+    events:
+      - http:
+          path: debug/reset_db
+          method: get
 
 resources:
   Resources:
