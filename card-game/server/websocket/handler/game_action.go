@@ -10,30 +10,25 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/pobo380/network-games/card-game/server/websocket/game/action"
 	"github.com/pobo380/network-games/card-game/server/websocket/game/state"
+	"github.com/pobo380/network-games/card-game/server/websocket/handler/request"
 	"github.com/pobo380/network-games/card-game/server/websocket/handler/response"
 	"github.com/pobo380/network-games/card-game/server/websocket/table"
 )
 
-type GameActionRequest struct {
-	Type       string
-	GameId     string
-	GameAction *json.RawMessage
-}
-
-func GameAction(ctx context.Context, request events.APIGatewayWebsocketProxyRequest) (events.APIGatewayProxyResponse, error) {
-	reqCtx := request.RequestContext
+func GameAction(ctx context.Context, req events.APIGatewayWebsocketProxyRequest) (events.APIGatewayProxyResponse, error) {
+	reqCtx := req.RequestContext
 	res := response.Responses{}
 
-	gar := &GameActionRequest{}
-	err := json.Unmarshal([]byte(request.Body), gar)
+	gar := &request.GameActionRequest{}
+	err := request.Parse([]byte(req.Body), gar)
 	if err != nil {
-		return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
+		return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
 	}
 
 	act := action.NewActionFromType(action.Type(gar.Type))
 	err = json.Unmarshal(*gar.GameAction, act)
 	if err != nil {
-		return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
+		return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
 	}
 
 	// get Game
@@ -42,7 +37,7 @@ func GameAction(ctx context.Context, request events.APIGatewayWebsocketProxyRequ
 	st := &state.State{}
 	err = json.Unmarshal([]byte(game.RawState), st)
 	if err != nil {
-		return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
+		return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
 	}
 
 	// do action
@@ -51,13 +46,13 @@ func GameAction(ctx context.Context, request events.APIGatewayWebsocketProxyRequ
 	// save Game
 	rawSt, err := json.Marshal(st)
 	if err != nil {
-		return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
+		return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
 	}
 	game.RawState = string(rawSt)
 
 	err = putItemGame(game)
 	if err != nil {
-		return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
+		return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
 	}
 
 	// send Events
@@ -69,15 +64,15 @@ func GameAction(ctx context.Context, request events.APIGatewayWebsocketProxyRequ
 	// send Responses
 	pcs, err := batchGetPlayerConnections(game.PlayerIds)
 	if err != nil {
-		return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
+		return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
 	}
 
 	err = sendResponsesToPlayers(gw, pcs, res)
 	if err != nil {
-		return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
+		return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
 	}
 
-	return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 200}, nil
+	return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 200}, nil
 }
 
 func getItemGame(gameId string) (*table.Game, error) {

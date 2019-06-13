@@ -7,11 +7,14 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/pobo380/network-games/card-game/server/websocket/table"
+	"net/http"
 )
 
 func OnConnect(ctx context.Context, request events.APIGatewayWebsocketProxyRequest) (events.APIGatewayProxyResponse, error) {
 	reqCtx := request.RequestContext
-	playerId := request.Headers[CustomHeaderPlayerId]
+	header := http.Header(request.MultiValueHeaders)
+
+	playerId := header.Get(CustomHeaderPlayerId)
 
 	pc := &table.PlayerConnection{
 		PlayerId:     playerId,

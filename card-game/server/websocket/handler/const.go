@@ -8,8 +8,8 @@ const (
 	DynamoDbIndexConnectionId = "ConnectionId"
 	DynamoDbIndexIsOpen       = "IsOpen"
 
-	CustomHttpHeaderPrefix = "x-pobo380-network-games"
-	CustomHeaderPlayerId   = CustomHttpHeaderPrefix + "-player-id"
+	CustomHttpHeaderPrefix = "X-Pobo380-Network-Games"
+	CustomHeaderPlayerId   = CustomHttpHeaderPrefix + "-Player-Id"
 
 	MaxPlayerNumPerRoom = 4
 )
