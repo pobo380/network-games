@@ -30,6 +30,19 @@ func chDirToProjectRoot() {
 	fmt.Println(p)
 }
 
+func makeBuild() {
+	cmd := exec.Command("make", "clean", "build")
+	out, _ := cmd.CombinedOutput()
+
+	// output log
+	fmt.Println(string(out))
+
+	// check exit code
+	if cmd.ProcessState.ExitCode() != 0 {
+		panic(fmt.Sprintf("cmd failed : `make %v`", cmd.Args))
+	}
+}
+
 func slsDeploy() {
 	cmd := exec.Command("sls", "deploy", "--stage", "test")
 	out, _ := cmd.CombinedOutput()
@@ -41,14 +54,6 @@ func slsDeploy() {
 	if cmd.ProcessState.ExitCode() != 0 {
 		panic(fmt.Sprintf("cmd failed : `sls %v`", cmd.Args))
 	}
-}
-
-func slsRemove() {
-	cmd := exec.Command("sls", "remove", "--stage", "test")
-	out, _ := cmd.CombinedOutput()
-
-	// output log
-	fmt.Println(string(out))
 }
 
 func slsInfo() string {
@@ -75,15 +80,31 @@ func slsInfo() string {
 	return string(endpoint)
 }
 
+func debugResetDb() {
+	cmd := exec.Command("sls", "invoke", "-f", "debug", "--stage", "test")
+	out, _ := cmd.CombinedOutput()
+
+	// output log
+	fmt.Println(string(out))
+
+	// check exit code
+	if cmd.ProcessState.ExitCode() != 0 {
+		panic(fmt.Sprintf("cmd failed : `sls %v`", cmd.Args))
+	}
+}
+
 func TestMain(m *testing.M) {
 	// chdir to project root
 	chDirToProjectRoot()
 
-	// sls remove before deploy
-	slsRemove()
+	// make clean build
+	makeBuild()
 
 	// sls deploy
 	slsDeploy()
+
+	// reset db
+	debugResetDb()
 
 	// sls info
 	DefaultWssEndpoint = slsInfo()
