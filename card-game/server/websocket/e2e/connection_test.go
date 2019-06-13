@@ -5,14 +5,14 @@ import (
 )
 
 func Test_Connect(t *testing.T) {
-	con, _ := newWssConnection()
-	defer con.Close()
+	c := newWssConnection()
+	defer c.Con.Close()
 }
 
 func Test_Reconnect(t *testing.T) {
-	con, playerId := newWssConnection()
-	con.Close()
+	c := newWssConnection()
+	defer c.Con.Close()
 
-	con = newWssConnectionWithArgs(DefaultWssEndpoint, playerId)
-	defer con.Close()
+	c = newWssConnectionWithArgs(DefaultWssEndpoint, c.PlayerId)
+	defer c.Con.Close()
 }

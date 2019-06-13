@@ -43,6 +43,14 @@ func slsDeploy() {
 	}
 }
 
+func slsRemove() {
+	cmd := exec.Command("sls", "remove", "--stage", "test")
+	out, _ := cmd.CombinedOutput()
+
+	// output log
+	fmt.Println(string(out))
+}
+
 func slsInfo() string {
 	cmd := exec.Command("sls", "info", "--stage", "test")
 	out, _ := cmd.CombinedOutput()
@@ -71,6 +79,9 @@ func TestMain(m *testing.M) {
 	// chdir to project root
 	chDirToProjectRoot()
 
+	// sls remove before deploy
+	slsRemove()
+
 	// sls deploy
 	slsDeploy()
 
@@ -79,6 +90,7 @@ func TestMain(m *testing.M) {
 
 	// run Tests
 	status := m.Run()
+
 	os.Exit(status)
 }
 
@@ -86,12 +98,17 @@ func TestMain(m *testing.M) {
 // Helper
 //
 
-func newWssConnection() (*websocket.Conn, string) {
-	playerId := uuid.NewV4().String()
-	return newWssConnectionWithArgs(DefaultWssEndpoint, playerId), playerId
+type Client struct {
+	Con      *websocket.Conn
+	PlayerId string
 }
 
-func newWssConnectionWithArgs(url string, playerId string) *websocket.Conn {
+func newWssConnection() *Client {
+	playerId := uuid.NewV4().String()
+	return newWssConnectionWithArgs(DefaultWssEndpoint, playerId)
+}
+
+func newWssConnectionWithArgs(url string, playerId string) *Client {
 	h := http.Header{}
 	h.Add("X-Pobo380-Network-Games-Player-Id", playerId)
 
@@ -101,5 +118,5 @@ func newWssConnectionWithArgs(url string, playerId string) *websocket.Conn {
 		panic(fmt.Sprintf("Dial failed : %s\n%+v\n%s", err, resp, string(b)))
 	}
 
-	return c
+	return &Client{Con: c, PlayerId: playerId}
 }
