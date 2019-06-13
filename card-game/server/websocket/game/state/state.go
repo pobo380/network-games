@@ -44,6 +44,21 @@ func (st *State) InitGame() {
 	// deal to player hands
 	st.Deck.Shuffle(st.rand)
 	st.Deal()
+
+	// determine PlayOrder
+	st.PlayOrder = model.PlayOrder{
+		CurrentIdx: 0,
+	}
+	for _, player := range st.Players {
+		st.PlayOrder.Order = append(st.PlayOrder.Order, player.Id)
+	}
+
+	st.PlayOrder.Shuffle(st.rand)
+
+	// set initial upcards
+	st.Upcards.Cards = model.Cards{}
+	c, _ := st.Deck.Draw()
+	st.Upcards.Cards.Add(c)
 }
 
 func (st *State) InitDeck() {

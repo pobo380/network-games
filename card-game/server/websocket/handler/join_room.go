@@ -139,7 +139,10 @@ func newState(playerIds []string) *state.State {
 		})
 	}
 
-	return state.NewState(cfg, players)
+	st := state.NewState(cfg, players)
+	st.InitGame()
+
+	return st
 }
 
 func putItem(table string, item interface{}) error {
