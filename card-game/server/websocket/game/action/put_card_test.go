@@ -202,7 +202,7 @@ func TestPutCard_Do(t *testing.T) {
 			},
 			wantEvents: event.Events{
 				&event.NotAcceptable{
-					ActionType: TypePutCard,
+					ActionType: string(TypePutCard),
 					Reason:     "PlayerId is not found.",
 				},
 			},
@@ -233,7 +233,7 @@ func TestPutCard_Do(t *testing.T) {
 			},
 			wantEvents: event.Events{
 				&event.NotAcceptable{
-					ActionType: TypePutCard,
+					ActionType: string(TypePutCard),
 					Reason:     "PlayerId is not turn owner.",
 				},
 			},
@@ -271,7 +271,7 @@ func TestPutCard_Do(t *testing.T) {
 			},
 			wantEvents: event.Events{
 				&event.NotAcceptable{
-					ActionType: TypePutCard,
+					ActionType: string(TypePutCard),
 					Reason:     "No upcards exists.",
 				},
 			},
@@ -314,7 +314,7 @@ func TestPutCard_Do(t *testing.T) {
 			},
 			wantEvents: event.Events{
 				&event.NotAcceptable{
-					ActionType: TypePutCard,
+					ActionType: string(TypePutCard),
 					Reason:     "PutCard has different number and different suit.",
 				},
 			},
@@ -359,7 +359,7 @@ func TestPutCard_Do(t *testing.T) {
 			},
 			wantEvents: event.Events{
 				&event.NotAcceptable{
-					ActionType: TypePutCard,
+					ActionType: string(TypePutCard),
 					Reason:     "Player has not PutCard.",
 				},
 			},

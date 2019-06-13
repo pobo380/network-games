@@ -38,7 +38,7 @@ func TestPass_Do(t *testing.T) {
 			},
 			wantEvents: event.Events{
 				&event.NotAcceptable{
-					ActionType: TypePass,
+					ActionType: string(TypePass),
 					Reason:     "PlayerId is not found.",
 				},
 			},
@@ -68,7 +68,7 @@ func TestPass_Do(t *testing.T) {
 			},
 			wantEvents: event.Events{
 				&event.NotAcceptable{
-					ActionType: TypePass,
+					ActionType: string(TypePass),
 					Reason:     "PlayerId is not turn owner.",
 				},
 			},
