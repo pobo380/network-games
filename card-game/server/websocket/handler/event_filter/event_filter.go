@@ -64,18 +64,29 @@ func filterDrawCard(ev event.Event, playerId string) event.Event {
 
 func filterGameState(ev event.Event, playerId string) event.Event {
 	gs := ev.(*event.GameState)
+	newSt := *gs.State
 
-	newEv := *gs
-	for i := range newEv.State.Players {
-		pl := &newEv.State.Players[i]
+	newPlayers := make([]model.Player, len(newSt.Players))
+	copy(newPlayers, newSt.Players)
+
+	for i := range newPlayers {
+		pl := &newPlayers[i]
+
 		if string(pl.Id) == playerId {
 			continue
 		}
 
-		for j := range pl.Hand.Cards {
-			pl.Hand.Cards[j] = model.InvalidCard
+		l := len(pl.Hand.Cards)
+		pl.Hand.Cards = model.Cards{}
+
+		for i := 0; i < l; i++ {
+			pl.Hand.Cards = append(pl.Hand.Cards, model.InvalidCard)
 		}
 	}
 
-	return &newEv
+	newSt.Players = newPlayers
+
+	return &event.GameState{
+		State: &newSt,
+	}
 }
