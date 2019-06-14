@@ -1,8 +1,10 @@
 package e2e
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
+	"github.com/pobo380/network-games/card-game/server/websocket/game/action"
 	"github.com/pobo380/network-games/card-game/server/websocket/game/event"
 	"github.com/pobo380/network-games/card-game/server/websocket/game/state"
 	"github.com/pobo380/network-games/card-game/server/websocket/handler/request"
@@ -11,6 +13,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 func newWssConnection() *Client {
@@ -49,7 +52,29 @@ func (c *Client) SendJoinRoom() {
 		},
 	}
 
+	c.send(req)
+}
+
+func (c *Client) SendGameAction(t action.Type, act action.Action) {
+	raw, _ := json.Marshal(act)
+	rawAct := json.RawMessage(raw)
+
+	req := &request.Request{
+		Action: "gameAction",
+		Body: &request.GameActionRequest{
+			Type:       string(t),
+			GameId:     c.GameId,
+			GameAction: &rawAct,
+		},
+	}
+
+	c.send(req)
+}
+
+func (c *Client) send(req interface{}) {
 	c.Con.WriteJSON(req)
+
+	time.Sleep(50 * time.Millisecond)
 }
 
 func (c *Client) RecvRoomInfo() (*response.RoomInfo, error) {
