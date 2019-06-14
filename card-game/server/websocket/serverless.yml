@@ -123,11 +123,11 @@ resources:
             Projection:
               ProjectionType: KEYS_ONLY
             ProvisionedThroughput:
-              ReadCapacityUnits: 1
-              WriteCapacityUnits: 1
+              ReadCapacityUnits: 100
+              WriteCapacityUnits: 100
         ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+          ReadCapacityUnits: 100
+          WriteCapacityUnits: 100
         SSESpecification:
           SSEEnabled: False
         StreamSpecification:
@@ -152,11 +152,11 @@ resources:
             Projection:
               ProjectionType: ALL
             ProvisionedThroughput:
-              ReadCapacityUnits: 1
-              WriteCapacityUnits: 1
+              ReadCapacityUnits: 100
+              WriteCapacityUnits: 100
         ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+          ReadCapacityUnits: 100
+          WriteCapacityUnits: 100
         SSESpecification:
           SSEEnabled: False
         StreamSpecification:
@@ -172,8 +172,8 @@ resources:
           - AttributeName: GameId
             KeyType: HASH
         ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+          ReadCapacityUnits: 100
+          WriteCapacityUnits: 100
         SSESpecification:
           SSEEnabled: False
         StreamSpecification:
