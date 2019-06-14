@@ -1,4 +1,4 @@
-package main
+package handler
 
 const (
 	EnvDynamoDbTableConnections = "DYNAMODB_TABLE_CONNECTIONS"

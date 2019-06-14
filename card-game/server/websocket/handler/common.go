@@ -1,4 +1,4 @@
-package main
+package handler
 
 import (
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 	"github.com/pobo380/network-games/card-game/server/websocket/table"
 )
 
-func batchGetPlayerConnections(playerIds []string) ([]*table.PlayerConnection, error) {
+func BatchGetPlayerConnections(playerIds []string) ([]*table.PlayerConnection, error) {
 	avs := make([]map[string]*dynamodb.AttributeValue, 0, len(playerIds))
 	for _, playerId := range playerIds {
 		avs = append(avs, map[string]*dynamodb.AttributeValue{
@@ -28,7 +28,7 @@ func batchGetPlayerConnections(playerIds []string) ([]*table.PlayerConnection, e
 		},
 	}
 
-	items, err := dynamo.BatchGetItem(bgi)
+	items, err := Dynamo.BatchGetItem(bgi)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func batchGetPlayerConnections(playerIds []string) ([]*table.PlayerConnection, e
 	return pcs, nil
 }
 
-func sendResponsesToPlayers(gw *gwApi.ApiGatewayManagementApi, pcs []*table.PlayerConnection, res response.Responses) error {
+func SendResponsesToPlayers(gw *gwApi.ApiGatewayManagementApi, pcs []*table.PlayerConnection, res response.Responses) error {
 	for _, r := range res {
 		raw, err := json.Marshal(r)
 		if err != nil {

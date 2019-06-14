@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
+	. "github.com/pobo380/network-games/card-game/server/websocket/handler"
 )
 
 func OnDisconnect(ctx context.Context, request events.APIGatewayWebsocketProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -26,7 +27,7 @@ func OnDisconnect(ctx context.Context, request events.APIGatewayWebsocketProxyRe
 		TableName:                 &DynamoDbTableConnections,
 	}
 
-	qr, err := dynamo.Query(q)
+	qr, err := Dynamo.Query(q)
 	if err != nil {
 		return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
 	}
@@ -46,7 +47,7 @@ func OnDisconnect(ctx context.Context, request events.APIGatewayWebsocketProxyRe
 		},
 	}
 
-	_, err = dynamo.BatchWriteItem(bwi)
+	_, err = Dynamo.BatchWriteItem(bwi)
 	if err != nil {
 		return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
 	}

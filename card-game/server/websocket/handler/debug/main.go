@@ -7,11 +7,12 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
+	. "github.com/pobo380/network-games/card-game/server/websocket/handler"
 )
 
 func Debug(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	in := &dynamodb.ListTablesInput{}
-	out, err := dynamo.ListTables(in)
+	out, err := Dynamo.ListTables(in)
 	if err != nil {
 		return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
 	}
@@ -21,7 +22,7 @@ func Debug(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGa
 			TableName: tbl,
 		}
 
-		descOut, err := dynamo.DescribeTable(descIn)
+		descOut, err := Dynamo.DescribeTable(descIn)
 		if err != nil {
 			fmt.Printf("Skip table : %s\n", *tbl)
 			continue
@@ -47,7 +48,7 @@ func Debug(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGa
 			TableName:                 tbl,
 		}
 
-		scOut, err := dynamo.Scan(scIn)
+		scOut, err := Dynamo.Scan(scIn)
 		if err != nil {
 			return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
 		}
@@ -60,7 +61,7 @@ func Debug(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGa
 				TableName: tbl,
 			}
 
-			_, err := dynamo.DeleteItem(delIn)
+			_, err := Dynamo.DeleteItem(delIn)
 			if err != nil {
 				return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
 			}

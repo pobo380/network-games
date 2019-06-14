@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	. "github.com/pobo380/network-games/card-game/server/websocket/handler"
 	"github.com/pobo380/network-games/card-game/server/websocket/table"
 	"net/http"
 )
@@ -31,7 +32,7 @@ func OnConnect(ctx context.Context, request events.APIGatewayWebsocketProxyReque
 		Item:      item,
 	}
 
-	_, err = dynamo.PutItem(in)
+	_, err = Dynamo.PutItem(in)
 	if err != nil {
 		return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 500}, err
 	}

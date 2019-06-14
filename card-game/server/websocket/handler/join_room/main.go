@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 	"github.com/pobo380/network-games/card-game/server/websocket/game/model"
 	"github.com/pobo380/network-games/card-game/server/websocket/game/state"
+	. "github.com/pobo380/network-games/card-game/server/websocket/handler"
 	"github.com/pobo380/network-games/card-game/server/websocket/handler/request"
 	"github.com/pobo380/network-games/card-game/server/websocket/handler/response"
 	"github.com/pobo380/network-games/card-game/server/websocket/table"
@@ -44,7 +45,7 @@ func JoinRoom(ctx context.Context, req events.APIGatewayWebsocketProxyRequest) (
 		TableName:                 aws.String(DynamoDbTableRooms),
 	}
 
-	qr, err := dynamo.Query(q)
+	qr, err := Dynamo.Query(q)
 	if err != nil {
 		return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
 	}
@@ -110,12 +111,12 @@ func JoinRoom(ctx context.Context, req events.APIGatewayWebsocketProxyRequest) (
 	gw, err := NewGwApi(reqCtx.DomainName, reqCtx.Stage)
 
 	// send Responses
-	pcs, err := batchGetPlayerConnections(r.PlayerIds)
+	pcs, err := BatchGetPlayerConnections(r.PlayerIds)
 	if err != nil {
 		return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
 	}
 
-	err = sendResponsesToPlayers(gw, pcs, res)
+	err = SendResponsesToPlayers(gw, pcs, res)
 	if err != nil {
 		return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
 	}
@@ -148,7 +149,7 @@ func putItem(table string, item interface{}) error {
 		return err
 	}
 
-	_, err = dynamo.PutItem(&dynamodb.PutItemInput{
+	_, err = Dynamo.PutItem(&dynamodb.PutItemInput{
 		TableName: aws.String(table),
 		Item:      av,
 	})

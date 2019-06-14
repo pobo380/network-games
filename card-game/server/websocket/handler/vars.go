@@ -1,4 +1,4 @@
-package main
+package handler
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	dynamo = NewDynamo()
+	Dynamo = NewDynamo()
 
 	DynamoDbTableConnections = os.Getenv(EnvDynamoDbTableConnections)
 	DynamoDbTableRooms       = os.Getenv(EnvDynamoDbTableRooms)

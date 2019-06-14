@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/pobo380/network-games/card-game/server/websocket/game/action"
 	"github.com/pobo380/network-games/card-game/server/websocket/game/state"
+	. "github.com/pobo380/network-games/card-game/server/websocket/handler"
 	"github.com/pobo380/network-games/card-game/server/websocket/handler/request"
 	"github.com/pobo380/network-games/card-game/server/websocket/handler/response"
 	"github.com/pobo380/network-games/card-game/server/websocket/table"
@@ -62,12 +63,12 @@ func GameAction(ctx context.Context, req events.APIGatewayWebsocketProxyRequest)
 	gw, err := NewGwApi(reqCtx.DomainName, reqCtx.Stage)
 
 	// send Responses
-	pcs, err := batchGetPlayerConnections(game.PlayerIds)
+	pcs, err := BatchGetPlayerConnections(game.PlayerIds)
 	if err != nil {
 		return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
 	}
 
-	err = sendResponsesToPlayers(gw, pcs, res)
+	err = SendResponsesToPlayers(gw, pcs, res)
 	if err != nil {
 		return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
 	}
@@ -84,7 +85,7 @@ func getItemGame(gameId string) (*table.Game, error) {
 		},
 		TableName: aws.String(DynamoDbTableGames),
 	}
-	out, err := dynamo.GetItem(in)
+	out, err := Dynamo.GetItem(in)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +110,7 @@ func putItemGame(g *table.Game) error {
 		Item:      av,
 	}
 
-	_, err = dynamo.PutItem(in)
+	_, err = Dynamo.PutItem(in)
 	if err != nil {
 		return err
 	}
