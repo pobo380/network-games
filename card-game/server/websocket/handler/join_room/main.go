@@ -15,7 +15,7 @@ import (
 	. "github.com/pobo380/network-games/card-game/server/websocket/handler"
 	"github.com/pobo380/network-games/card-game/server/websocket/handler/request"
 	"github.com/pobo380/network-games/card-game/server/websocket/handler/response"
-	"github.com/pobo380/network-games/card-game/server/websocket/table"
+	"github.com/pobo380/network-games/card-game/server/websocket/handler/table"
 )
 
 func JoinRoom(ctx context.Context, req events.APIGatewayWebsocketProxyRequest) (events.APIGatewayProxyResponse, error) {

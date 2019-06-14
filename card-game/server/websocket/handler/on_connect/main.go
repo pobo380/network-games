@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	. "github.com/pobo380/network-games/card-game/server/websocket/handler"
-	"github.com/pobo380/network-games/card-game/server/websocket/table"
+	"github.com/pobo380/network-games/card-game/server/websocket/handler/table"
 	"net/http"
 )
 
