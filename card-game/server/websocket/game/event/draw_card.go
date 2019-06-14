@@ -7,3 +7,7 @@ type DrawCard struct {
 	Cards    model.Cards
 	CardsNum int
 }
+
+func (*DrawCard) GetType() string {
+	return TypeDrawCard
+}

@@ -13,3 +13,7 @@ type FinishGame struct {
 	WinnerId   model.PlayerId
 	FinishType FinishType
 }
+
+func (*FinishGame) GetType() string {
+	return TypeFinishGame
+}
