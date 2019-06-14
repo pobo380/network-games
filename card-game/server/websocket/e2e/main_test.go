@@ -2,10 +2,6 @@ package e2e
 
 import (
 	"fmt"
-	"github.com/gorilla/websocket"
-	uuid "github.com/satori/go.uuid"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"os/exec"
 	"regexp"
@@ -113,31 +109,4 @@ func TestMain(m *testing.M) {
 	status := m.Run()
 
 	os.Exit(status)
-}
-
-//
-// Helper
-//
-
-type Client struct {
-	Con      *websocket.Conn
-	PlayerId string
-}
-
-func newWssConnection() *Client {
-	playerId := uuid.NewV4().String()
-	return newWssConnectionWithArgs(DefaultWssEndpoint, playerId)
-}
-
-func newWssConnectionWithArgs(url string, playerId string) *Client {
-	h := http.Header{}
-	h.Add("X-Pobo380-Network-Games-Player-Id", playerId)
-
-	c, resp, err := websocket.DefaultDialer.Dial(url, h)
-	if err != nil {
-		b, _ := ioutil.ReadAll(resp.Body)
-		panic(fmt.Sprintf("Dial failed : %s\n%+v\n%s", err, resp, string(b)))
-	}
-
-	return &Client{Con: c, PlayerId: playerId}
 }
