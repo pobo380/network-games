@@ -47,6 +47,31 @@ func BatchGetPlayerConnections(playerIds []string) ([]*table.PlayerConnection, e
 	return pcs, nil
 }
 
+func SendResponsesMapToPlayers(gw *gwApi.ApiGatewayManagementApi, pcs []*table.PlayerConnection, resMap map[string]response.Responses) error {
+	for _, pc := range pcs {
+		res := resMap[pc.PlayerId]
+
+		for _, r := range res {
+			raw, err := json.Marshal(r)
+			if err != nil {
+				return err
+			}
+
+			data := &gwApi.PostToConnectionInput{
+				ConnectionId: aws.String(pc.ConnectionId),
+				Data:         raw,
+			}
+
+			_, err = gw.PostToConnection(data)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 func SendResponsesToPlayers(gw *gwApi.ApiGatewayManagementApi, pcs []*table.PlayerConnection, res response.Responses) error {
 	for _, r := range res {
 		raw, err := json.Marshal(r)

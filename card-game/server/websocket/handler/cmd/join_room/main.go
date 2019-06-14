@@ -10,9 +10,11 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
+	"github.com/pobo380/network-games/card-game/server/websocket/game/event"
 	"github.com/pobo380/network-games/card-game/server/websocket/game/model"
 	"github.com/pobo380/network-games/card-game/server/websocket/game/state"
 	. "github.com/pobo380/network-games/card-game/server/websocket/handler"
+	"github.com/pobo380/network-games/card-game/server/websocket/handler/event_filter"
 	"github.com/pobo380/network-games/card-game/server/websocket/handler/request"
 	"github.com/pobo380/network-games/card-game/server/websocket/handler/response"
 	"github.com/pobo380/network-games/card-game/server/websocket/handler/table"
@@ -20,7 +22,7 @@ import (
 
 func JoinRoom(ctx context.Context, req events.APIGatewayWebsocketProxyRequest) (events.APIGatewayProxyResponse, error) {
 	reqCtx := req.RequestContext
-	res := response.Responses{}
+	commonRes := response.Responses{}
 
 	// parse request
 	jrr := &request.JoinRoomRequest{}
@@ -78,7 +80,16 @@ func JoinRoom(ctx context.Context, req events.APIGatewayWebsocketProxyRequest) (
 	}
 
 	// add RoomInfo response
-	res.Add(response.TypeRoomInfo, &response.RoomInfo{Room: r})
+	commonRes.Add(response.TypeRoomInfo, &response.RoomInfo{Room: r})
+
+	// get pcs
+	pcs, err := BatchGetPlayerConnections(r.PlayerIds)
+	if err != nil {
+		return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
+	}
+
+	// create apigw api manager
+	gw, err := NewGwApi(reqCtx.DomainName, reqCtx.Stage)
 
 	// send GameStart when room is filled
 	if r.IsClosed() {
@@ -101,24 +112,34 @@ func JoinRoom(ctx context.Context, req events.APIGatewayWebsocketProxyRequest) (
 		}
 
 		// send GameStart
-		res.Add(response.TypeGameStart, &response.GameStart{
+		commonRes.Add(response.TypeGameStart, &response.GameStart{
 			GameId:    g.GameId,
 			PlayerIds: g.PlayerIds,
 		})
-	}
 
-	// create apigw api manager
-	gw, err := NewGwApi(reqCtx.DomainName, reqCtx.Stage)
+		// create responses for each player
+		resMap := make(map[string]response.Responses)
+		for _, playerId := range g.PlayerIds {
+			res := response.Responses{}
+			res = append(res, commonRes...)
 
-	// send Responses
-	pcs, err := BatchGetPlayerConnections(r.PlayerIds)
-	if err != nil {
-		return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
-	}
+			// send GameEvent
+			res.Add(response.TypeGameEvent, &response.GameEvent{
+				Events: event_filter.Filter(event.Events{&event.GameState{State: st}}, playerId),
+			})
 
-	err = SendResponsesToPlayers(gw, pcs, res)
-	if err != nil {
-		return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
+			resMap[playerId] = res
+		}
+
+		err = SendResponsesMapToPlayers(gw, pcs, resMap)
+		if err != nil {
+			return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
+		}
+	} else {
+		err = SendResponsesToPlayers(gw, pcs, commonRes)
+		if err != nil {
+			return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
+		}
 	}
 
 	return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 200}, nil

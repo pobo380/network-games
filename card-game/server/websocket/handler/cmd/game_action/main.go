@@ -9,8 +9,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/pobo380/network-games/card-game/server/websocket/game/action"
+	"github.com/pobo380/network-games/card-game/server/websocket/game/event"
 	"github.com/pobo380/network-games/card-game/server/websocket/game/state"
 	. "github.com/pobo380/network-games/card-game/server/websocket/handler"
+	"github.com/pobo380/network-games/card-game/server/websocket/handler/event_filter"
 	"github.com/pobo380/network-games/card-game/server/websocket/handler/request"
 	"github.com/pobo380/network-games/card-game/server/websocket/handler/response"
 	"github.com/pobo380/network-games/card-game/server/websocket/handler/table"
@@ -18,7 +20,6 @@ import (
 
 func GameAction(ctx context.Context, req events.APIGatewayWebsocketProxyRequest) (events.APIGatewayProxyResponse, error) {
 	reqCtx := req.RequestContext
-	res := response.Responses{}
 
 	gar := &request.GameActionRequest{}
 	err := request.Parse([]byte(req.Body), gar)
@@ -44,6 +45,19 @@ func GameAction(ctx context.Context, req events.APIGatewayWebsocketProxyRequest)
 	// do action
 	evs, st := act.Do(st)
 
+	// add GameState event
+	evs = append(evs, &event.GameState{State: st})
+
+	// create GameEvents for each player
+	resMap := make(map[string]response.Responses)
+	for _, playerId := range game.PlayerIds {
+		res := response.Responses{}
+		res.Add(response.TypeGameEvent, &response.GameEvent{
+			Events: event_filter.Filter(evs, playerId),
+		})
+		resMap[playerId] = res
+	}
+
 	// save Game
 	rawSt, err := json.Marshal(st)
 	if err != nil {
@@ -56,9 +70,6 @@ func GameAction(ctx context.Context, req events.APIGatewayWebsocketProxyRequest)
 		return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
 	}
 
-	// send Events
-	res.Add(response.TypeGameEvent, &response.GameEvent{Events: evs})
-
 	// create apigw api manager
 	gw, err := NewGwApi(reqCtx.DomainName, reqCtx.Stage)
 
@@ -68,7 +79,7 @@ func GameAction(ctx context.Context, req events.APIGatewayWebsocketProxyRequest)
 		return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
 	}
 
-	err = SendResponsesToPlayers(gw, pcs, res)
+	err = SendResponsesMapToPlayers(gw, pcs, resMap)
 	if err != nil {
 		return events.APIGatewayProxyResponse{Body: req.Body, StatusCode: 500}, err
 	}

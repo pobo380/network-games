@@ -17,7 +17,7 @@ func TestFilter(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		wantRet event.Events
+		wantRet EventWithTypes
 	}{
 		{
 			name: "フィルターされるやつ",
@@ -49,25 +49,31 @@ func TestFilter(t *testing.T) {
 				},
 				playerId: "1",
 			},
-			wantRet: event.Events{
-				&event.DrawCard{
-					PlayerId: "2",
-					Cards:    model.Cards{},
-					CardsNum: 2,
+			wantRet: EventWithTypes{
+				{
+					Type: "DrawCard",
+					Event: &event.DrawCard{
+						PlayerId: "2",
+						Cards:    model.Cards{},
+						CardsNum: 2,
+					},
 				},
-				&event.GameState{
-					State: &state.State{
-						Players: []model.Player{
-							{
-								Id: "1",
-								Hand: model.Hand{
-									Cards: model.Cards{{Suit: model.SuitClub, Number: 1}, {Suit: model.SuitClub, Number: 2}},
+				{
+					Type: "GameState",
+					Event: &event.GameState{
+						State: &state.State{
+							Players: []model.Player{
+								{
+									Id: "1",
+									Hand: model.Hand{
+										Cards: model.Cards{{Suit: model.SuitClub, Number: 1}, {Suit: model.SuitClub, Number: 2}},
+									},
 								},
-							},
-							{
-								Id: "2",
-								Hand: model.Hand{
-									Cards: model.Cards{model.InvalidCard, model.InvalidCard},
+								{
+									Id: "2",
+									Hand: model.Hand{
+										Cards: model.Cards{model.InvalidCard, model.InvalidCard},
+									},
 								},
 							},
 						},

@@ -1,23 +1,49 @@
 package event_filter
 
 import (
+	"encoding/json"
 	"github.com/pobo380/network-games/card-game/server/websocket/game/event"
 	"github.com/pobo380/network-games/card-game/server/websocket/game/model"
 )
 
-func Filter(src event.Events, playerId string) (ret event.Events) {
+type EventWithTypes []*EventWithType
+
+type EventWithType struct {
+	Type  string
+	Event event.Event
+}
+
+func (ewt *EventWithType) UnmarshalJSON(b []byte) error {
+	type alias EventWithType
+	t := &struct {
+		Event json.RawMessage
+		*alias
+	}{
+		alias: (*alias)(ewt),
+	}
+	if err := json.Unmarshal(b, t); err != nil {
+		return err
+	}
+
+	ev := event.NewFromType(t.Type)
+	if err := json.Unmarshal(t.Event, ev); err != nil {
+		return err
+	}
+
+	ewt.Event = ev
+	return nil
+}
+
+func Filter(src event.Events, playerId string) (ret EventWithTypes) {
 	for _, evt := range src {
-		var newEvt event.Event
 		switch evt.GetType() {
 		case event.TypeDrawCard:
-			newEvt = filterDrawCard(evt, playerId)
+			evt = filterDrawCard(evt, playerId)
 		case event.TypeGameState:
-			newEvt = filterGameState(evt, playerId)
+			evt = filterGameState(evt, playerId)
 		}
 
-		if newEvt != nil {
-			ret = append(ret, newEvt)
-		}
+		ret = append(ret, &EventWithType{Type: evt.GetType(), Event: evt})
 	}
 
 	return ret
